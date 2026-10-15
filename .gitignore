@@ -1,0 +1,16 @@
+.env
+.env.*
+!.env.example
+.DS_Store
+*.log
+node_modules/
+dist/
+build/
+*.local.md
+.claude/settings.local.json
+.claude/agent-memory-local/
+*.goal-interview
+*.goal-fixture
+*.goal-fixture-bad
+*.goal-authoring/
+*.goal-authoring-review

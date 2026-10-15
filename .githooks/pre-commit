@@ -1,0 +1,6 @@
+#!/usr/bin/env bash
+# Generated repo-scaffold entry point. Both hook phases use these exact bytes.
+# Gates live in .githooks/commit-gates, never in this entry point.
+# Adding a rule here is the bug this file exists to prevent: the last installer
+# to write it silently wins and the other component's gate disappears.
+exec bash "$(git rev-parse --show-toplevel)/.githooks/commit-gates" "$@"

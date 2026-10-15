@@ -1,0 +1,10 @@
+# .qualityignore — accepted exclusions from quality gates.
+#
+# Each entry is an exact repository-relative path, a trailing-slash directory name,
+# or a shell-style glob, with a comment naming its reason. Entries are debt: the
+# audit re-checks ignored paths every run and drops entries that no longer apply.
+# Adding or broadening an entry is a policy decision requiring explicit user
+# authorization; it never appears hidden inside an implementation refactor.
+#
+# This repo has no generated, vendored, or unchangeable paths to exclude. Empty by
+# design — do not add entries without approval.

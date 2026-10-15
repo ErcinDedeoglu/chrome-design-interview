@@ -1,0 +1,79 @@
+#!/usr/bin/env bash
+# Generated hook dispatcher. repo-scaffold's kit and quality phases use these
+# exact bytes. To add a gate, add its own file
+# and register it in run() below — never edit a pre-commit hook in place.
+#
+# Phase comes from the argument git passes. prepare-commit-msg receives the
+# message-file path; pre-commit receives nothing. `git commit --no-verify` skips
+# pre-commit and commit-msg but NOT prepare-commit-msg, so the bypass-proof
+# gates run in both phases and cannot be skipped by either flag or env export.
+set -uo pipefail
+
+ROOT=$(git rev-parse --show-toplevel)
+export AGENT_KIT_NO_WRITE=1
+
+# A shell export must not be able to weaken a commit.
+unset AGENT_KIT_CHAIN_TEST AGENT_KIT_CROWD_THRESHOLD AGENT_KIT_SKIP
+
+rc=0
+run() {
+  local rel=$1
+  shift
+  local f="$ROOT/$rel"
+  if [ ! -f "$f" ]; then
+    if [ "$rel" = .githooks/check-owned-quality.sh ] && { [ -f "$ROOT/quality/owned-repositories.json" ] || git -C "$ROOT" cat-file -e HEAD:quality/owned-repositories.json 2>/dev/null; }; then
+      echo "fail: missing required parent-owned quality gate" >&2
+      rc=1
+    fi
+    if [ "$rel" = tooling/agent-kit/knowledge-check.py ] && [ -f "$ROOT/tooling/agent-kit/check.sh" ]; then
+      echo "fail: missing required knowledge gate" >&2
+      rc=1
+    fi
+    return 0
+  fi
+  echo "== $rel =="
+  local cmd
+  case "$rel" in
+    *.py)
+      if ! command -v python3 >/dev/null 2>&1; then
+        echo "fail: python3 required for $rel" >&2
+        rc=1
+        return
+      fi
+      cmd=(python3 "$f")
+      ;;
+    *)
+      cmd=(bash "$f")
+      ;;
+  esac
+  # GIT_DIR / GIT_INDEX_FILE leak into nested git calls and make them answer
+  # about the wrong repo, silently passing gates. Scrub them per gate.
+  if [ "$rel" = tooling/agent-kit/knowledge-check.py ] || [ "$rel" = tooling/agent-kit/agents-chain.py ] || [ "$rel" = .githooks/check-quality.sh ] || [ "$rel" = .githooks/check-owned-quality.sh ]; then
+    if ! env -u GIT_DIR -u GIT_WORK_TREE -u GIT_PREFIX "${cmd[@]}" "$@"; then
+      rc=1
+      echo "== $rel FAILED =="
+    fi
+    return
+  fi
+  if ! env -u GIT_DIR -u GIT_INDEX_FILE -u GIT_WORK_TREE -u GIT_PREFIX \
+      "${cmd[@]}" "$@"; then
+    rc=1
+    echo "== $rel FAILED =="
+  fi
+}
+
+if [ $# -gt 0 ]; then
+  # prepare-commit-msg: the gates that must never be skippable.
+  run tooling/agent-kit/agents-chain.py --index "$ROOT"
+  run tooling/agent-kit/knowledge-check.py --index "$ROOT"
+  run .githooks/check-quality.sh
+  run .githooks/check-owned-quality.sh
+else
+  # pre-commit: the full check. Every gate still runs again under --no-verify.
+  run tooling/agent-kit/check.sh --no-write "$ROOT"
+  run tooling/agent-kit/knowledge-check.py --index "$ROOT"
+  run .githooks/check-quality.sh
+  run .githooks/check-owned-quality.sh
+fi
+
+exit $rc
