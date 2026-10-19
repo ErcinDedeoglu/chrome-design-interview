@@ -13,7 +13,7 @@
 |------|---------|
 | Install | n/a |
 | Dev | n/a |
-| Test | n/a |
+| Test | `node chrome-extension/tests/content.test.js`<br>`node chrome-extension/tests/browser-ac.js` (real loaded extension; needs an unbranded Chrome build — branded Chrome 137+ ignores `--load-extension`) |
 | Lint | n/a |
 | Typecheck | n/a |
 | Build | n/a |
