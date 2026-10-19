@@ -49,19 +49,46 @@
   padding: 0 4px;
 }
 
-#uxfb-sidebar-filters {
-  display: flex;
-  gap: 8px;
-  padding: 8px 12px;
+#uxfb-capture-bar {
+  padding: 12px 12px 10px;
   border-bottom: 1px solid #e8eaed;
 }
 
-#uxfb-sidebar-filters select {
-  flex: 1;
-  padding: 4px 6px;
+#uxfb-capture-toggle {
+  width: 100%;
+  padding: 10px 12px;
+  border-radius: 6px;
+  font-size: 14px;
+  font-weight: 600;
+  cursor: pointer;
   border: 1px solid #dadce0;
-  border-radius: 4px;
+  background: #fff;
+  color: #1a73e8;
+}
+
+#uxfb-capture-toggle:hover { background: #f1f3f4; }
+
+#uxfb-capture-toggle.uxfb-on {
+  background: #1a73e8;
+  border-color: #1a73e8;
+  color: #fff;
+}
+
+#uxfb-capture-toggle.uxfb-on:hover { background: #1557b0; }
+
+#uxfb-capture-hint {
+  margin: 8px 0 0;
   font-size: 12px;
+  line-height: 1.4;
+  color: #5f6368;
+}
+
+.uxfb-empty {
+  margin: 24px 8px;
+  text-align: center;
+  font-size: 13px;
+  line-height: 1.5;
+  color: #80868b;
 }
 
 #uxfb-sidebar-comments {
@@ -70,68 +97,15 @@
   padding: 8px 12px;
 }
 
-.uxfb-sidebar-item {
-  padding: 8px;
-  border: 1px solid #e8eaed;
-  border-radius: 6px;
-  margin-bottom: 8px;
-  cursor: pointer;
-}
 
-.uxfb-sidebar-item:hover {
-  background: #f8f9fa;
-}
 
-.uxfb-sidebar-item.active {
-  border-color: #1a73e8;
-  background: #e8f0fe;
-}
 
-.uxfb-sidebar-item-header {
-  display: flex;
-  align-items: center;
-  gap: 6px;
-  margin-bottom: 4px;
-}
 
-.uxfb-sidebar-number {
-  font-weight: 700;
-  color: #1a73e8;
-  font-size: 13px;
-}
 
-.uxfb-sidebar-target {
-  font-weight: 600;
-  text-transform: uppercase;
-  font-size: 11px;
-  color: #5f6368;
-}
 
-.uxfb-sidebar-severity, .uxfb-sidebar-status {
-  font-size: 10px;
-  padding: 1px 6px;
-  border-radius: 3px;
-  font-weight: 600;
-  text-transform: uppercase;
-}
 
-.uxfb-sidebar-severity.low, .uxfb-sidebar-status.open { color: #1e8e3e; background: #e6f4ea; }
-.uxfb-sidebar-severity.medium, .uxfb-sidebar-status.in-progress { color: #e37400; background: #fef7e0; }
-.uxfb-sidebar-severity.high, .uxfb-sidebar-status.resolved { color: #d93025; background: #fce8e6; }
 
-.uxfb-sidebar-item-text {
-  font-size: 12px;
-  margin: 4px 0;
-  color: #333;
-}
 
-.uxfb-sidebar-item-meta {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  font-size: 10px;
-  color: #80868b;
-}
 
 .uxfb-sidebar-item-meta button {
   cursor: pointer;
@@ -140,6 +114,43 @@
   font-size: 14px;
   color: #1a73e8;
   padding: 2px;
+}
+
+/* Hover highlight: shows what a click will anchor a comment to. Sits below
+   badges and the sidebar so neither is obscured. */
+#uxfb-hover-layer {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 0;
+  height: 0;
+  z-index: 99989;
+  pointer-events: none;
+  display: none;
+}
+
+#uxfb-hover-box {
+  position: fixed;
+  border: 2px solid #1a73e8;
+  background: rgba(26, 115, 232, 0.12);
+  border-radius: 2px;
+  box-shadow: 0 0 0 1px rgba(255, 255, 255, 0.6);
+}
+
+#uxfb-hover-label {
+  position: fixed;
+  background: #1a73e8;
+  color: #fff;
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+  font-size: 11px;
+  line-height: 1.4;
+  padding: 2px 6px;
+  border-radius: 3px;
+  white-space: nowrap;
+  max-width: 240px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.3);
 }
 
 /* Badge overlay: badges are anchored to the target's rect from this layer so
@@ -254,4 +265,289 @@
 
 #uxfb-editor-options button {
   padding: 6px 12px;
+}
+
+#uxfb-outstanding-filter {
+  font-size: 11px;
+  padding: 3px 7px;
+  margin-right: 6px;
+  border: 1px solid #dadce0;
+  border-radius: 10px;
+  background: #fff;
+  color: #5f6368;
+  cursor: pointer;
+  white-space: nowrap;
+}
+
+#uxfb-outstanding-filter:hover { background: #f1f3f4; }
+
+#uxfb-outstanding-filter.uxfb-on-filter {
+  background: #e8f0fe;
+  border-color: #1a73e8;
+  color: #1a73e8;
+}
+
+.uxfb-group {
+  border: 1px solid #e0e0e0;
+  border-radius: 8px;
+  margin-bottom: 10px;
+  overflow: hidden;
+  background: #fff;
+}
+
+.uxfb-group-done { opacity: 0.55; }
+
+.uxfb-group-head {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 8px 10px;
+  background: #f8f9fa;
+  border-bottom: 1px solid #eceff1;
+  cursor: pointer;
+}
+
+.uxfb-group-head:hover { background: #f1f3f4; }
+
+.uxfb-group-title {
+  flex: 1;
+  font-size: 12px;
+  font-weight: 600;
+  color: #202124;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.uxfb-group-count {
+  font-size: 10px;
+  color: #80868b;
+  flex: none;
+  font-variant-numeric: tabular-nums;
+}
+
+.uxfb-group-check {
+  width: 18px;
+  height: 18px;
+  flex: none;
+  border: 1px solid #bdc1c6;
+  border-radius: 4px;
+  background: #fff;
+  cursor: pointer;
+  font-size: 12px;
+  line-height: 1;
+  color: #fff;
+  padding: 0;
+}
+
+.uxfb-group-check[aria-pressed="true"] {
+  background: #1a73e8;
+  border-color: #1a73e8;
+}
+
+.uxfb-group-head .uxfb-sidebar-scroll {
+  font-size: 13px;
+  color: #1a73e8;
+  background: none;
+  border: none;
+  cursor: pointer;
+  padding: 0 2px;
+  flex: none;
+}
+
+.uxfb-group-body { padding: 2px 0; }
+
+.uxfb-collapsed .uxfb-group-body { display: none; }
+.uxfb-collapsed .uxfb-group-head { border-bottom: none; }
+
+.uxfb-row {
+  display: flex;
+  align-items: flex-start;
+  gap: 6px;
+  padding: 6px 10px;
+  border-bottom: 1px solid #f1f3f4;
+  cursor: pointer;
+}
+
+.uxfb-row:last-child { border-bottom: none; }
+.uxfb-row:hover { background: #f8f9fa; }
+.uxfb-row.active { background: #e8f0fe; }
+.uxfb-row-done .uxfb-row-text { text-decoration: line-through; color: #9aa0a6; }
+.uxfb-row-done .uxfb-row-number { color: #9aa0a6; }
+
+.uxfb-check {
+  width: 16px;
+  height: 16px;
+  flex: none;
+  margin-top: 2px;
+  border: 1px solid #bdc1c6;
+  border-radius: 50%;
+  background: #fff;
+  cursor: pointer;
+  padding: 0;
+}
+
+.uxfb-check[aria-pressed="true"] {
+  background: #1a73e8;
+  border-color: #1a73e8;
+}
+
+.uxfb-check[aria-pressed="true"]::after {
+  content: "";
+  display: block;
+  width: 4px;
+  height: 8px;
+  border: solid #fff;
+  border-width: 0 2px 2px 0;
+  transform: rotate(45deg);
+  margin: 1px auto;
+}
+
+.uxfb-row-number {
+  font-size: 11px;
+  font-weight: 700;
+  color: #5f6368;
+  flex: none;
+  min-width: 20px;
+}
+
+.uxfb-row-text {
+  flex: 1;
+  font-size: 12px;
+  line-height: 1.45;
+  color: #202124;
+  word-break: break-word;
+}
+
+.uxfb-row-edit,
+.uxfb-row-delete {
+  flex: none;
+  background: none;
+  border: none;
+  cursor: pointer;
+  font-size: 12px;
+  color: #9aa0a6;
+  padding: 1px 3px;
+  border-radius: 3px;
+}
+
+.uxfb-row-edit:hover { background: #e8eaed; color: #1a73e8; }
+.uxfb-row-delete:hover { background: #fce8e6; color: #d93025; }
+
+/* Existing-comment popover: shown on hover (after a short delay) and on click,
+   so hovering shows exactly what clicking would open. */
+#uxfb-existing {
+  position: fixed;
+  z-index: 100002;
+  width: 300px;
+  max-height: 60vh;
+  overflow-y: auto;
+  background: #fff;
+  border: 1px solid #dadce0;
+  border-radius: 8px;
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.18);
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+  font-size: 13px;
+}
+
+.uxfb-existing-head {
+  display: flex;
+  align-items: center;
+  padding: 8px 10px;
+  border-bottom: 1px solid #eceff1;
+  background: #f8f9fa;
+  border-radius: 8px 8px 0 0;
+}
+
+.uxfb-existing-title {
+  flex: 1;
+  font-weight: 600;
+  font-size: 12px;
+  color: #202124;
+}
+
+.uxfb-existing-close {
+  background: none;
+  border: none;
+  cursor: pointer;
+  font-size: 16px;
+  color: #5f6368;
+  padding: 0 2px;
+}
+
+.uxfb-existing-row {
+  display: flex;
+  align-items: flex-start;
+  gap: 6px;
+  padding: 7px 10px;
+  border-bottom: 1px solid #f1f3f4;
+}
+
+.uxfb-existing-row.is-done .uxfb-existing-text {
+  text-decoration: line-through;
+  color: #9aa0a6;
+}
+
+.uxfb-existing-text {
+  flex: 1;
+  line-height: 1.45;
+  color: #202124;
+  word-break: break-word;
+}
+
+.uxfb-existing-edit,
+.uxfb-existing-delete {
+  flex: none;
+  background: none;
+  border: none;
+  cursor: pointer;
+  font-size: 12px;
+  color: #9aa0a6;
+  padding: 1px 3px;
+  border-radius: 3px;
+}
+
+.uxfb-existing-edit:hover { background: #e8eaed; color: #1a73e8; }
+.uxfb-existing-delete:hover { background: #fce8e6; color: #d93025; }
+
+.uxfb-existing-add {
+  display: block;
+  width: calc(100% - 20px);
+  margin: 8px 10px;
+  padding: 8px;
+  border: 1px dashed #bdc1c6;
+  border-radius: 6px;
+  background: #fff;
+  color: #1a73e8;
+  font-size: 12px;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.uxfb-existing-add:hover { background: #f1f3f4; }
+
+#uxfb-shortcuts {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px 10px;
+  padding: 6px 12px;
+  border-bottom: 1px solid #e8eaed;
+  font-size: 10px;
+  color: #80868b;
+}
+
+#uxfb-shortcuts span {
+  display: inline-flex;
+  align-items: center;
+  gap: 2px;
+}
+
+#uxfb-shortcuts kbd {
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+  font-size: 9px;
+  padding: 1px 4px;
+  border: 1px solid #dadce0;
+  border-radius: 3px;
+  background: #f8f9fa;
+  color: #5f6368;
 }

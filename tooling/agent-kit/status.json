@@ -1,9 +1,9 @@
 {
   "result": "passed",
-  "growth": "kit",
+  "growth": "vertical",
   "counts": {
-    "added": 0,
-    "modified": 2,
+    "added": 2,
+    "modified": 9,
     "deleted": 0,
     "moved": 0
   }

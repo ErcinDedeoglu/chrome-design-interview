@@ -226,7 +226,6 @@ async function main() {
     await evaluate(cdp, mainCtx, `(() => {
       const ed = document.getElementById('uxfb-editor');
       ed.querySelector('#uxfb-editor-text').value = 'Checkout heading is too large on mobile';
-      ed.querySelector('#uxfb-editor-severity').value = 'high';
       ed.querySelector('#uxfb-editor-save').click(); return 1;})()`, false);
     await sleep(900);
 
@@ -248,8 +247,8 @@ async function main() {
     // ── AC-5: sidebar click scrolls and flashes ─────────────────────
     console.log('\nAC-5 sidebar navigation');
     const ac5 = JSON.parse(await evaluate(cdp, mainCtx, `(() => {
-      const item = Array.from(document.querySelectorAll('.uxfb-sidebar-item'))
-        .find((i) => (i.querySelector('.uxfb-sidebar-target') || {}).textContent === 'a');
+      // Comments are grouped by element now; the first row is the comment.
+      const item = document.querySelector('.uxfb-row');
       if (!item) return JSON.stringify({ clicked: false });
       const target = document.getElementById('nav-link');
       const scrollBefore = window.scrollY;
@@ -324,8 +323,128 @@ async function main() {
       console.log('  element.rects.viewport = ' + JSON.stringify(el.rects.viewport));
     }
 
-    // ── AC-6: restart the browser, confirm durability ───────────────
+    // ── Keyboard shortcuts, driven as real key events ────────────────
+  console.log('\nKeyboard shortcuts (real key events)');
+  {
+    const send = (type, params) => cdp.send(type, params);
+    const press = async (key, { alt = 0, meta = 0 } = {}) => {
+      const code = 'Key' + key.toUpperCase();
+      const vk = key.toUpperCase().charCodeAt(0);
+      const base = {
+        key, code, windowsVirtualKeyCode: vk, nativeVirtualKeyCode: vk,
+        modifiers: (alt ? 1 : 0) | (meta ? 4 : 0),
+      };
+      await send('Input.dispatchKeyEvent', Object.assign({ type: 'keyDown' }, base));
+      await send('Input.dispatchKeyEvent', Object.assign({ type: 'keyUp' }, base));
+      await sleep(400);
+    };
+    // Two comments, so J/K have something to walk between.
+    // Seed through storage, not the UI: these checks are about the shortcuts,
+    // and clicking an already-commented element now opens the popover instead
+    // of the editor, which makes UI-seeded fixtures order-dependent.
+    await evaluate(cdp, iso, `(async () => {
+      const key = 'ux_feedback_comments:' + location.origin + '/index.html';
+      const mk = (n, text, sel) => ({
+        id: 'c_kb' + n, number: n, text, done: false,
+        metadata: { selector: sel, xpath: '/html/body/' + sel, tagName: 'div',
+          text, attributes: {}, ancestors: [], siblings: [], visibility: true,
+          interactionState: {},
+          computedStyle: { display: 'block', fontSize: '16px' },
+          rects: { viewport: { x: 40, y: 40, width: 100, height: 20 },
+                   page: { x: 40, y: 40, width: 100, height: 20 } } },
+        createdAt: new Date().toISOString(),
+        updatedAt: new Date().toISOString(), editHistory: []
+      });
+      await chrome.storage.local.set({ [key]: [
+        mk(1, 'first note', '#checkout-title'),
+        mk(2, 'second note', '#footer-heading')
+      ] });
+      return true; })()`);
+    await cdp.send('Page.reload');
+    await sleep(3200);
+    contexts.length = 0;
+    await cdp.send('Runtime.disable');
+    await cdp.send('Runtime.enable');
+    await sleep(900);
+    const kbIso = contexts.find((c) => c.name && /UX Feedback/i.test(c.name));
+    const kbMain = contexts.find((c) => c.name === '');
+    await evaluate(cdp, kbIso, `new Promise((r) =>
+      chrome.runtime.sendMessage({ type: 'REQUEST_SET_MODE', mode: true }, r))`);
+    await sleep(600);
+    const mainCtx = kbMain;
+    // Key events only reach the page while it holds focus; a reload hands
+    // focus back to the omnibox.
+    await cdp.send('Page.bringToFront');
+    await cdp.send('Emulation.setFocusEmulationEnabled',
+      { enabled: true }).catch(() => {});
+    const state = () => evaluate(cdp, mainCtx, `JSON.stringify({
+      active: (document.querySelector('.uxfb-row.active')||{}).textContent || null,
+      done: Array.from(document.querySelectorAll('.uxfb-check'))
+        .map((b) => b.getAttribute('aria-pressed')) })`, false);
+
+    check('there are comments to navigate between', await evaluate(cdp, mainCtx,
+      `document.querySelectorAll('.uxfb-row').length >= 2`, false));
+
+    await press('j');
+    check('J focuses a comment',
+      /#/.test(JSON.parse(await state()).active || ''));
+    await press('j');
+    const second = JSON.parse(await state()).active || '';
+    check('J again advances to the next comment', /#2/.test(second),
+      'active: ' + second);
+    await press('k');
+    check('K goes back', /#1/.test(JSON.parse(await state()).active || ''));
+
+    await press('r');
+    check('R marks the focused comment done',
+      JSON.parse(await state()).done[0] === 'true');
+    await press('r');
+    check('R again unmarks it',
+      JSON.parse(await state()).done[0] === 'false');
+
+    await press('Escape');
+    check('Esc leaves comment mode', await evaluate(cdp, mainCtx,
+      `document.body.style.cursor || ''`, false) === '');
+    await press('c', { alt: 1 });
+    check('Alt+C turns comment mode back on', await evaluate(cdp, mainCtx,
+      `document.body.style.cursor || ''`, false) === 'crosshair',
+      'cursor: ' + await evaluate(cdp, mainCtx, `document.body.style.cursor`, false));
+
+    // Leave no state behind: AC-6 asserts on exact comment counts.
+    await evaluate(cdp, kbIso, `(async () => {
+      const all = await chrome.storage.local.get(null);
+      const keys = Object.keys(all).filter((k) => k.indexOf('ux_feedback_comments') === 0);
+      await chrome.storage.local.remove(keys);
+      return keys.length; })()`);
+  }
+  // ── AC-6: restart the browser, confirm durability ───────────────
     console.log('\nAC-6 survival across a browser restart');
+    // Seed one comment of our own: the keyboard checks navigated the page and
+    // cleared storage, so the outer contexts are stale and the state is gone.
+    // Clear AFTER navigating: contexts emitted during the navigation belong to
+    // the document we are leaving, and picking one of those fails at runtime.
+    await cdp.send('Page.navigate', { url: DEMO_URL });
+    await sleep(3200);
+    contexts.length = 0;
+    await cdp.send('Runtime.disable');
+    await cdp.send('Runtime.enable');
+    await sleep(900);
+    const ac6iso = contexts.find((c) => c.name && /UX Feedback/i.test(c.name));
+    await evaluate(cdp, ac6iso, `(async () => {
+      const key = 'ux_feedback_comments:' + location.origin + '/index.html';
+      await chrome.storage.local.set({ [key]: [{
+        id: 'c_ac6', number: 1, text: 'survives a restart', done: false,
+        metadata: { selector: '#nav-link', xpath: '/body/p/a', tagName: 'a',
+          text: 'Leave site', attributes: { id: 'nav-link' }, ancestors: [],
+          siblings: [], visibility: true, interactionState: {},
+          computedStyle: { display: 'inline', fontSize: '16px' },
+          rects: { viewport: { x: 40, y: 247, width: 72, height: 19 },
+                   page: { x: 40, y: 247, width: 72, height: 19 } } },
+        createdAt: new Date().toISOString(),
+        updatedAt: new Date().toISOString(), editHistory: []
+      }] });
+      return true; })()`);
+    await sleep(400);
     proc.kill('SIGTERM');
     await sleep(3000);
     const proc2 = spawn(chrome, [
@@ -361,8 +480,8 @@ async function main() {
       const sidebarAfter = JSON.parse(await evaluate(cdp2, after.main, `(() => {
         return JSON.stringify({
           injected: !!document.getElementById('uxfb-sidebar'),
-          items: document.querySelectorAll('.uxfb-sidebar-item').length,
-          text: (document.querySelector('.uxfb-sidebar-item-text') || {}).textContent,
+          items: document.querySelectorAll('.uxfb-row').length,
+          text: (document.querySelector('.uxfb-row-text') || {}).textContent,
           badgesWhileModeOff: document.querySelectorAll('.uxfb-badge').length });})()`, false));
       check('sidebar restored on load', sidebarAfter.injected === true);
       check('the comment is listed in the sidebar', sidebarAfter.items === 1,

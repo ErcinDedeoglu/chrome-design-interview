@@ -29,7 +29,7 @@ A loadable Chrome extension that enters feedback mode on toggle, lets designers 
 - Toggle mode to enter and exit feedback mode
 - Click interception that captures full DOM element metadata: selector, XPath, tag, text, attributes, computed styles, interaction state, rects, ancestors, siblings, visibility
 - Numbered badge markers on commented elements
-- Sidebar panel listing all comments with severity and status filters
+- Sidebar panel listing all comments
 - Clicking a sidebar comment scrolls to and flashes the target element
 - Comment editing and deletion with edit history
 - Export all comments as JSON with page context and element metadata
