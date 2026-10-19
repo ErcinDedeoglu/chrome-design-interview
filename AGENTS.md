@@ -13,13 +13,18 @@
 |------|---------|
 | Install | n/a |
 | Dev | n/a |
-| Test | `node chrome-extension/tests/content.test.js`<br>`node chrome-extension/tests/browser-ac.js` (real loaded extension; needs an unbranded Chrome build — branded Chrome 137+ ignores `--load-extension`) |
+| Test | fast `node chrome-extension/tests/content.test.js` (~0.4s, inner loop)<br>full `node chrome-extension/tests/browser-ac.js` (~23s, real loaded extension; needs an unbranded Chrome build) |
 | Lint | n/a |
 | Typecheck | n/a |
 | Build | n/a |
-| Agent kit | `tooling/agent-kit/check.sh` |
+| Agent kit | `tooling/agent-kit/check.sh` — ~1.5s |
 
 Leave `n/a` until the command exists and has been run once. Never guess. Agent kit is not `n/a`.
+
+## Delivery
+
+No branches, no pull requests: commit straight to `main`, then push. Gates run on every commit
+(~2.3s); never bypass with `--no-verify`. A slow agent, not the pipeline, is the bottleneck.
 
 ## Pointers
 
